@@ -9,7 +9,6 @@ def scrape():
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # Збираємо таблицю за класом wikitable
     table = soup.find('table', {'class': 'wikitable'})
 
     # titles for columns in table
@@ -17,22 +16,18 @@ def scrape():
 
     world_table_titles = [title.text.strip() for title in world_titles]
 
-    # Створюємо DataFrame з заголовками стовпців
     df = pd.DataFrame(columns=world_table_titles)
 
     column_data = table.find_all('tr')
 
-    # Проходимо по всіх рядках таблиці (окрім першого, де заголовки)
     for row in column_data[1:]:
         row_data = row.find_all('td')
         individual_row_data = [data.text.strip() for data in row_data]
 
-        # Якщо кількість елементів не співпадає, додаємо None для пропущених значень
         if len(individual_row_data) < len(world_table_titles):
             individual_row_data += [None] * (len(world_table_titles) - len(individual_row_data))
         df = df._append(pd.Series(individual_row_data, index=df.columns), ignore_index=True)
 
-    # Збереження DataFrame у CSV файл
     df.to_csv('scraped_data_wikipedia.csv', index=False)
 
     print('Data has been successfully scraped and saved to CSV.')
