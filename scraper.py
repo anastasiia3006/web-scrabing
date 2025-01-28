@@ -26,7 +26,8 @@ def scrape():
 
         if len(individual_row_data) < len(world_table_titles):
             individual_row_data += [None] * (len(world_table_titles) - len(individual_row_data))
-        df = df._append(pd.Series(individual_row_data, index=df.columns), ignore_index=True)
+        new_row = pd.Series(individual_row_data, index=df.columns)
+        df = pd.concat([df, new_row.to_frame().T], ignore_index=True)
 
     df.to_csv('scraped_data_wikipedia.csv', index=False)
 
