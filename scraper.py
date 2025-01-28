@@ -1,19 +1,42 @@
+import csv
 import requests
 from bs4 import BeautifulSoup
+import pandas as pd
+
 
 def scrape():
-    url = 'https://www.reddit.com/'
+    url = 'https://en.wikipedia.org/wiki/List_of_largest_companies_in_the_United_States_by_revenue'
     response = requests.get(url)
-    soup = BeautifulSoup(response.text,'html.parser')
-    print(soup)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    title = soup.select_one('h1').text
-    text = soup.select_one('p').text
-    link = soup.select_one('a').get('href')
+    # Збираємо таблицю за класом wikitable
+    table = soup.find('table', {'class': 'wikitable'})
 
-    print('*********Title*********** ', title)
-    print('*********Text*********** ',text)
-    print('*********Link*********** ',link)
+    # titles for columns in table
+    world_titles = soup.find_all('th')
+
+    world_table_titles = [title.text.strip() for title in world_titles]
+
+    # Створюємо DataFrame з заголовками стовпців
+    df = pd.DataFrame(columns=world_table_titles)
+
+    column_data = table.find_all('tr')
+
+    # Проходимо по всіх рядках таблиці (окрім першого, де заголовки)
+    for row in column_data[1:]:
+        row_data = row.find_all('td')
+        individual_row_data = [data.text.strip() for data in row_data]
+
+        # Якщо кількість елементів не співпадає, додаємо None для пропущених значень
+        if len(individual_row_data) < len(world_table_titles):
+            individual_row_data += [None] * (len(world_table_titles) - len(individual_row_data))
+        df = df._append(pd.Series(individual_row_data, index=df.columns), ignore_index=True)
+
+    # Збереження DataFrame у CSV файл
+    df.to_csv('scraped_data_wikipedia.csv', index=False)
+
+    print('Data has been successfully scraped and saved to CSV.')
+
 
 if __name__ == '__main__':
     scrape()
